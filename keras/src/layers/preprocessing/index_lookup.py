@@ -87,8 +87,8 @@ class IndexLookup(Layer):
             If `True`, returns a `SparseTensor` instead of a dense `Tensor`.
             Defaults to `False`.
         oov_method: Only relevant when `num_oov_indices > 1` and the input
-            dtype is integer (i.e. for `IntegerLookup`). Controls how
-            Out-Of-Vocabulary (OOV) tokens are assigned to OOV buckets.
+            dtype is integer (i.e. for `IntegerLookup`). Controls how OOV
+            tokens are assigned to OOV buckets.
             - `"floormod"` (default): uses `token % num_oov_indices`.
               Preserves backwards compatibility but can produce severe bucket
               imbalance when input IDs share a common factor with
@@ -113,6 +113,7 @@ class IndexLookup(Layer):
         sparse=False,
         pad_to_max_tokens=False,
         oov_method="floormod",
+        oov_method="floormod",
         name=None,
         **kwargs,
     ):
@@ -134,6 +135,14 @@ class IndexLookup(Layer):
             raise ValueError(
                 "`num_oov_indices` must be greater than or equal to 0. "
                 f"Received: num_oov_indices={num_oov_indices}"
+            )
+
+        argument_validation.validate_string_arg(
+            oov_method,
+            allowable_strings=("floormod", "farmhash"),
+            caller_name=self.__class__.__name__,
+            arg_name="oov_method",
+        )
             )
 
         argument_validation.validate_string_arg(
@@ -196,6 +205,7 @@ class IndexLookup(Layer):
         self.sparse = sparse
         self.pad_to_max_tokens = pad_to_max_tokens
         self.vocabulary_dtype = tf.as_dtype(vocabulary_dtype).name
+        self.oov_method = oov_method
         self.oov_method = oov_method
         self._frozen_vocab_size = kwargs.pop("vocabulary_size", None)
 
@@ -366,6 +376,7 @@ class IndexLookup(Layer):
             "idf_weights": listify_tensors(self.input_idf_weights),
             "vocabulary": listify_tensors(self.input_vocabulary),
             "vocabulary_size": self._frozen_vocab_size,
+            "oov_method": self.oov_method,
             "oov_method": self.oov_method,
         }
         base_config = super().get_config()
@@ -835,6 +846,15 @@ class IndexLookup(Layer):
             lookup_checks.append(assertion)
         elif self.num_oov_indices > 1:
             if tf.as_dtype(self._key_dtype).is_integer:
+                if self.oov_method == "farmhash":
+                    # Cast int to string so we can apply FarmHash64
+                    oov_indices = tf.strings.to_hash_bucket_fast(
+                        tf.strings.as_string(inputs),
+                        num_buckets=self.num_oov_indices,
+                    )
+                else:
+                    # Default: backwards-compatible floormod behaviour.
+                    oov_indices = tf.math.floormod(inputs, self.num_oov_indices)
                 if self.oov_method == "farmhash":
                     # Cast int to string so we can apply FarmHash64
                     oov_indices = tf.strings.to_hash_bucket_fast(
