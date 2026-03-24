@@ -98,9 +98,10 @@ class IndexLookup(Layer):
               Distributes OOV tokens uniformly regardless of the arithmetic
               structure of the input IDs. String inputs always use FarmHash64
               regardless of this setting.
-        salt: Only valid when `oov_method="farmhash"`. If provided, enables
-            SipHash64 in place of FarmHash64 for OOV bucket assignment,
-            keyed by the given salt for additional collision resistance.
+        salt: Only valid when `oov_method="farmhash"`. If passed, the hash
+            function used for OOV bucket assignment will be SipHash64,
+            with these values used as an additional input (known as a
+            "salt" in cryptography).
             Can be a tuple or list of 2 integers, or a single integer
             (which is used for both key components). If `None` (default),
             FarmHash64 is used. Applies to both integer and string inputs.
@@ -168,7 +169,7 @@ class IndexLookup(Layer):
                     f"Received: oov_method={oov_method}"
                 )
             if isinstance(salt, (tuple, list)) and len(salt) == 2:
-                salt = [int(salt[0]), int(salt[1])]
+                salt = list(salt)
             elif isinstance(salt, int):
                 salt = [salt, salt]
             else:

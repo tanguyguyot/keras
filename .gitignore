@@ -24,3 +24,5 @@ examples/**/*.jpg
 
 pytest.ini
 venv/
+test.py
+.gitignore
