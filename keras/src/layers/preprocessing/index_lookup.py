@@ -163,7 +163,10 @@ class IndexLookup(Layer):
         )
 
         if salt is not None:
-            if oov_method != "farmhash":
+            if (
+                tf.as_dtype(vocabulary_dtype).is_integer
+                and oov_method != "farmhash"
+            ):
                 raise ValueError(
                     "`salt` can only be used when `oov_method='farmhash'`. "
                     f"Received: oov_method={oov_method}"
