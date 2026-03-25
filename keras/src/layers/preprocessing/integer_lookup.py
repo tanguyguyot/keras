@@ -127,8 +127,8 @@ class IntegerLookup(IndexLookup):
             `"tf_idf"` output modes. Only supported with TensorFlow
             backend. If `True`, returns a `SparseTensor`
             instead of a dense `Tensor`. Defaults to `False`.
-        oov_method: Only relevant when `num_oov_indices > 1`. Controls how OOV
-            tokens are assigned to OOV buckets.
+        oov_method: Only relevant when `num_oov_indices > 1`. Controls how
+            Out-of-Vocabulary (OOV) tokens are assigned to OOV buckets.
             - `"floormod"` (default): uses `token % num_oov_indices`.
               Preserves backwards compatibility but can produce severe bucket
               imbalance when input IDs share a common factor with

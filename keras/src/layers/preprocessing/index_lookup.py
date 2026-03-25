@@ -122,7 +122,6 @@ class IndexLookup(Layer):
         sparse=False,
         pad_to_max_tokens=False,
         oov_method="floormod",
-        oov_method="floormod",
         name=None,
         salt=None,
         **kwargs,
@@ -145,14 +144,6 @@ class IndexLookup(Layer):
             raise ValueError(
                 "`num_oov_indices` must be greater than or equal to 0. "
                 f"Received: num_oov_indices={num_oov_indices}"
-            )
-
-        argument_validation.validate_string_arg(
-            oov_method,
-            allowable_strings=("floormod", "farmhash"),
-            caller_name=self.__class__.__name__,
-            arg_name="oov_method",
-        )
             )
 
         argument_validation.validate_string_arg(
@@ -236,11 +227,7 @@ class IndexLookup(Layer):
         self.pad_to_max_tokens = pad_to_max_tokens
         self.vocabulary_dtype = tf.as_dtype(vocabulary_dtype).name
         self.oov_method = oov_method
-<<<<<<< HEAD
-        self.oov_method = oov_method
-=======
         self.salt = salt
->>>>>>> ecef598d8 (feat: add siphash to indexlookup)
         self._frozen_vocab_size = kwargs.pop("vocabulary_size", None)
 
         # Remember original `vocabulary` as `input_vocabulary` for serialization
@@ -411,11 +398,7 @@ class IndexLookup(Layer):
             "vocabulary": listify_tensors(self.input_vocabulary),
             "vocabulary_size": self._frozen_vocab_size,
             "oov_method": self.oov_method,
-<<<<<<< HEAD
-            "oov_method": self.oov_method,
-=======
             "salt": self.salt,
->>>>>>> ecef598d8 (feat: add siphash to indexlookup)
         }
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -899,15 +882,6 @@ class IndexLookup(Layer):
                             inputs_as_str,
                             num_buckets=self.num_oov_indices,
                         )
-                else:
-                    # Default: backwards-compatible floormod behaviour.
-                    oov_indices = tf.math.floormod(inputs, self.num_oov_indices)
-                if self.oov_method == "farmhash":
-                    # Cast int to string so we can apply FarmHash64
-                    oov_indices = tf.strings.to_hash_bucket_fast(
-                        tf.strings.as_string(inputs),
-                        num_buckets=self.num_oov_indices,
-                    )
                 else:
                     # Default: backwards-compatible floormod behaviour.
                     oov_indices = tf.math.floormod(inputs, self.num_oov_indices)
